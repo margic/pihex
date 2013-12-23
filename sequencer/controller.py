@@ -1,4 +1,4 @@
-from multiprocessing import Queue
+from multiprocessing import Queue, Pool
 import util
 
 __author__ = 'Paul'
@@ -11,6 +11,20 @@ __author__ = 'Paul'
 """
 __callbackQ = Queue()
 logger = util.logger
+pool = Pool(10)
+
+
+def hello(greeting):
+    print(greeting)
+    return 'x'
+
+
+def init():
+    logger.info('Initializing the controller')
+    logger.debug('Initializing motion worker pool')
+    pool.apply_async(hello, args=('hello',), callback=notify_movement_complete)
+    pool.close()
+    pool.join()
 
 
 def notify_movement_complete(movement):
