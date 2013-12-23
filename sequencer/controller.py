@@ -11,7 +11,6 @@ __author__ = 'Paul'
 """
 __callbackQ = Queue()
 logger = util.logger
-pool = Pool(10)
 
 
 def hello(greeting):
@@ -19,12 +18,9 @@ def hello(greeting):
     return 'x'
 
 
-def init():
+def start():
     logger.info('Initializing the controller')
     logger.debug('Initializing motion worker pool')
-    pool.apply_async(hello, args=('hello',), callback=notify_movement_complete)
-    pool.close()
-    pool.join()
 
 
 def notify_movement_complete(movement):

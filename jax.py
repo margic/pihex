@@ -11,7 +11,7 @@ logger = util.logger
 
 def main():
     logger.info('Starting the JAX robot controller')
-    controller.init()
+    controller.start()
 
 if __name__ == "__main__":
     main()
