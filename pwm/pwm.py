@@ -37,7 +37,7 @@ class Pwm:
         self.b1 = i2c.I2cBus(0x40)
         self.b1address = 0x40
         self.log = util.logger
-        self.log.debug("Resetting PCA9685 controller")
+        self.log.debug('Resetting PCA9685 controller')
         self.b1.write_byte(self.__MODE1, 0x00)
         time.sleep(0.005)
         self.set_freq(60)
@@ -48,10 +48,10 @@ class Pwm:
         prescaleval /= 4096.0       # 12-bit
         prescaleval /= float(freq)
         prescaleval -= 1.0
-        self.log.debug('Setting PWM frequency to: ' + freq + 'Hz')
-        self.log.debug('Estimated pre-scale: ' + prescaleval)
+        self.log.debug('Setting PWM frequency to: ' + str(freq) + 'Hz')
+        self.log.debug('Estimated pre-scale: ' + str(prescaleval))
         prescale = math.floor(prescaleval + 0.5)
-        self.log.debug('Final pre-scale: ' + prescale)
+        self.log.debug('Final pre-scale: ' + str(prescale))
 
         oldmode = self.b1.read_unsigned_byte(self.__MODE1)
         newmode = (oldmode & 0x7F) | 0x10             # sleep
@@ -70,7 +70,7 @@ class Pwm:
             self.b1.write_byte(self.__LED0_OFF_L + 4 * channel, pulse_end & 0xFF)
             self.b1.write_byte(self.__LED0_OFF_H + 4 * channel, pulse_end >> 8)
         else:
-            self.log.error('pulse length exceeds servo limits ' + pulse_length)
+            self.log.error('pulse length exceeds servo limits ' + str(pulse_length))
 
 
 

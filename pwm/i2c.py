@@ -21,9 +21,9 @@ class I2cBus:
         try:
             self.bus.write_byte_data(self.address, reg, value)
             if self.log.isEnabledFor(logging.DEBUG):
-                self.log.debug('I2C: Wrote ' + value + ' to register ' + reg)
+                self.log.debug('I2C: Wrote ' + str(value) + ' to register ' + str(reg))
         except IOError:
-            self.log.error('Error accessing ' + self.address + ': Check your I2C address')
+            self.log.error('Error accessing ' + str(self.address) + ': Check your I2C address')
             return -1
 
     def read_unsigned_byte(self, reg):
@@ -31,8 +31,8 @@ class I2cBus:
         try:
             result = self.bus.read_byte_data(self.address, reg)
             if self.log.isEnabledFor(logging.DEBUG):
-                self.log.debug('I2C: Device ' + self.address + ' returned ' + result & 0xFF + ' from reg ' + reg)
+                self.log.debug('I2C: Device ' + str(self.address) + ' returned ' + str(result & 0xFF) + ' from reg ' + str(reg))
             return result
         except IOError:
-            self.log.error('Error reading i2c device ' + self.address)
+            self.log.error('Error reading i2c device ' + str(self.address))
             return -1
