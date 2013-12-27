@@ -23,6 +23,7 @@ def start():
     logger.debug('Initializing motion worker pool')
 
 
+
 def notify_movement_complete(movement):
     __callbackQ.put(movement)
     logger.debug('Movement complete queued' + movement)
