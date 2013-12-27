@@ -1,5 +1,3 @@
-from pwm.i2c import I2cBus
-
 __author__ = 'paul'
 
 #!/usr/bin/python
@@ -31,12 +29,18 @@ class Pwm:
     __ALLLED_OFF_L = 0xFC
     __ALLLED_OFF_H = 0xFD
 
+    # Min Max servo values
+    __SERVO_MIN = 200
+    __SERVO_MAX = 500
+
     def __init__(self):
-        self.b1 = I2cBus(0x40)
+        self.b1 = i2c.I2cBus(0x40)
         self.b1address = 0x40
         self.log = util.logger
         self.log.debug("Resetting PCA9685 controller")
         self.b1.write_byte(self.__MODE1, 0x00)
+        time.sleep(0.005)
+        self.set_freq(60)
 
     def set_freq(self, freq):
         """Sets the PWM frequency"""
@@ -57,12 +61,16 @@ class Pwm:
         time.sleep(0.005)
         self.b1.write_byte(self.__MODE1, oldmode | 0x80)
 
-    def set_servo_pulse(self, channel, on, off):
-        """Sets a single servo PWM channel"""
-        self.b1.write_byte(self.__LED0_ON_L + 4 * channel, on & 0xFF)
-        self.b1.write_byte(self.__LED0_ON_H + 4 * channel, on >> 8)
-        self.b1.write_byte(self.__LED0_OFF_L + 4 * channel, off & 0xFF)
-        self.b1.write_byte(self.__LED0_OFF_H + 4 * channel, off >> 8)
+    def set_servo_pulse(self, channel, pulse_start, pulse_end):
+        """Sets a single servo PWM channel where pulseStart is typical 0 and pulseEnd is the end of the pulse"""
+        pulse_length = pulse_end - pulse_start
+        if (pulse_length > self.__SERVO_MIN) and (pulse_length < self.__SERVO_MAX):
+            self.b1.write_byte(self.__LED0_ON_L + 4 * channel, pulse_start & 0xFF)
+            self.b1.write_byte(self.__LED0_ON_H + 4 * channel, pulse_start >> 8)
+            self.b1.write_byte(self.__LED0_OFF_L + 4 * channel, pulse_end & 0xFF)
+            self.b1.write_byte(self.__LED0_OFF_H + 4 * channel, pulse_end >> 8)
+        else:
+            self.log.error('pulse length exceeds servo limits ' + pulse_length)
 
 
 
