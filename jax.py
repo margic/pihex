@@ -1,4 +1,4 @@
-from pwm.pwm import Pwm
+from servo.pwm import Pwm
 from sequencer import controller
 import util
 
