@@ -1,3 +1,5 @@
+import ConfigParser
+from client import stompclient
 from servo.pwm import Pwm
 from sequencer import controller
 import util
@@ -12,6 +14,22 @@ log = util.logger
 
 def main():
     log.info('Starting the JAX robot controller')
+
+    # load config properties
+    config = ConfigParser.ConfigParser()
+    config.read('config.cfg')
+    remote_queue_host = config.get('RemoteQueue', 'host')
+    remote_queue_port = config.getint('RemoteQueue', 'port')
+    remote_queue_username = config.get('RemoteQueue', 'username')
+    remote_queue_password = config.get('RemoteQueue', 'password')
+    remote_receive_queue = config.get('RemoteQueue', 'receive_queue')
+    remote_send_queue = config.get('RemoteQueue', 'send_queue')
+
+    # start the stomp client
+    stomp_client = stompclient.StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
+    stomp_client.start_listener(remote_receive_queue)
+
+    stomp_client.send_signon(remote_send_queue)
 
     pwm = None
 
