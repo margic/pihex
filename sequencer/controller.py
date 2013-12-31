@@ -1,5 +1,8 @@
+from client import StompClient
 import util
 import json
+from multiprocessing import Pool
+
 __author__ = 'Paul'
 
 #   Controls the sequencing of firing of leg movement based in provided sequence
@@ -8,17 +11,30 @@ __author__ = 'Paul'
 
 class Controller():
     def __init__(self):
-        servomap = None
-        servcalibration = None
+        self.servomap = None
+        self.servcalibration = None
+        self.stompclient = None
         self.log = util.logger
 
     def start(self):
         """
             starts the controller and prepares it for receiving sequences
         """
-        self._load_servo_config()
         self.log.info('Initializing the controller')
+        self._load_servo_config()
 
+        self.log.debug('Starting the multiprocessing pool')
+        pool = Pool(processes=5)
+        
+
+    def set_stomp_client(self, client):
+        """
+        sets the stomp client for making call to the server to register for more move sequences
+        @type client: StompClient
+        @param client: the stomp client for sending messages to the server 
+        """
+        self.stompclient = client
+    
     def _load_servo_config(self):
         """
             load the servo configuration files

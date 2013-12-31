@@ -1,5 +1,5 @@
 import ConfigParser
-from client import stompclient
+from client.stompclient import StompClient
 from sequencer.controller import Controller
 from sequencer.pwm import Pwm
 import util
@@ -30,9 +30,8 @@ def main():
     controller.start()
 
     # start the stomp client
-    stomp_client = stompclient.StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
+    stomp_client = StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
 
-    stomp_client.register_controller(controller)
     stomp_client.start_listener(remote_receive_queue)
 
     stomp_client.send_signon(remote_send_queue)

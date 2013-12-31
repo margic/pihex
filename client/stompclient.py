@@ -1,5 +1,5 @@
-import stomp
 import util
+import stomp
 
 __author__ = 'paul'
 
@@ -52,13 +52,3 @@ class StompClient:
         @param queue:
         """
         self.conn.send(destination=queue, body='{"signon":true}')
-
-    def register_controller(self, controller):
-        """
-        registers the controller with the stomp client
-        this allows the client to send the received sequences
-        to the sequencer for processing
-        @type controller: sequencer.controller.Controller
-        @param controller:
-        """
-        self.controller = controller
