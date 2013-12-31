@@ -1,31 +1,39 @@
-from multiprocessing import Queue, Pool
 import util
-
+import json
 __author__ = 'Paul'
-
 
 #   Controls the sequencing of firing of leg movement based in provided sequence
 #   that is obtained from the rules system
-#   A reference to the controller queue is passed to each processor for to
-#   provide callback functionality to kick of next leg movement and allow for
-#   variances in leg timing to move each leg.
 
 
-_callbackQ = Queue()
-logger = util.logger
+class Controller():
+    def __init__(self):
+        servomap = None
+        servcalibration = None
+        self.log = util.logger
 
+    def start(self):
+        """
+            starts the controller and prepares it for receiving sequences
+        """
+        self._load_servo_config()
+        self.log.info('Initializing the controller')
 
-def hello(greeting):
-    print(greeting)
-    return 'x'
+    def _load_servo_config(self):
+        """
+            load the servo configuration files
+            servomap contains the mapping from leg, and servo to servo channel
+            servocalibration contains the fine parameters for centering and controlling range of servo movement
+        """
+        self.log.debug('Loading servo map data')
+        json_data = open('config/servomap.json')
+        self.servomap = json.load(json_data)
+        json_data.close()
+        self.log.info('Loaded config/servomap.json')
 
-
-def start():
-    logger.info('Initializing the controller')
-    logger.debug('Initializing motion worker pool')
-
-
-def notify_movement_complete(movement):
-    _callbackQ.put(movement)
-    logger.debug('Movement complete queued' + movement)
+        self.log.debug('Loading servo calibration data')
+        json_data = open('config/servocalibration.json')
+        self.servocalibration = json.load(json_data)
+        json_data.close()
+        self.log.info('Loaded condig/servocalibration.json')
 

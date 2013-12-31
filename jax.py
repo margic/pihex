@@ -1,7 +1,7 @@
 import ConfigParser
 from client import stompclient
-from servo.pwm import Pwm
-from sequencer import controller
+from sequencer.controller import Controller
+from sequencer.pwm import Pwm
 import util
 
 __author__ = 'Paul'
@@ -25,8 +25,14 @@ def main():
     remote_receive_queue = config.get('RemoteQueue', 'receive_queue')
     remote_send_queue = config.get('RemoteQueue', 'send_queue')
 
+    # start the controller
+    controller = Controller()
+    controller.start()
+
     # start the stomp client
     stomp_client = stompclient.StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
+
+    stomp_client.register_controller(controller)
     stomp_client.start_listener(remote_receive_queue)
 
     stomp_client.send_signon(remote_send_queue)
@@ -44,7 +50,11 @@ def main():
             pwm.set_servo_pulse(0, 0, value)
             pwm.set_servo_pulse(1, 0, value)
 
-    #controller.start()
+
+
+
+
+
 
 if __name__ == "__main__":
     main()

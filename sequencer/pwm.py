@@ -1,10 +1,11 @@
+from sequencer import i2c
+
 __author__ = 'paul'
 
 #!/usr/bin/python
 
 import time
 import math
-import i2c
 import util
 
 

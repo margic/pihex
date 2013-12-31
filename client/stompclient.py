@@ -30,6 +30,7 @@ class StompClient:
         self.username = username
         self.password = password
         self.conn = stomp.Connection
+        self.controller = None
 
     def start_listener(self, queue):
         """
@@ -51,3 +52,13 @@ class StompClient:
         @param queue:
         """
         self.conn.send(destination=queue, body='{"signon":true}')
+
+    def register_controller(self, controller):
+        """
+        registers the controller with the stomp client
+        this allows the client to send the received sequences
+        to the sequencer for processing
+        @type controller: sequencer.controller.Controller
+        @param controller:
+        """
+        self.controller = controller
