@@ -1,0 +1,113 @@
+{
+  "pulsePerDegree": "1.7",
+  "servoCalibration": [
+    {
+      "channel": 0,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 1,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 2,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 3,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 4,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 5,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 6,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 7,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 8,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 9,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 10,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 11,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 12,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 13,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 14,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 15,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 16,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    },
+    {
+      "channel": 17,
+      "center": 307,
+      "min": 205,
+      "max": 409
+    }
+  ]
+}

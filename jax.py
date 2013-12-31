@@ -17,7 +17,7 @@ def main():
 
     # load config properties
     config = ConfigParser.ConfigParser()
-    config.read('config.cfg')
+    config.read('config/settings.cfg')
     remote_queue_host = config.get('RemoteQueue', 'host')
     remote_queue_port = config.getint('RemoteQueue', 'port')
     remote_queue_username = config.get('RemoteQueue', 'username')

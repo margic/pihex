@@ -40,7 +40,7 @@ class Pwm:
         self.log.debug('Resetting PCA9685 controller')
         self.b1.write_byte(self.__MODE1, 0x00)
         time.sleep(0.005)
-        self.set_freq(60)
+        self.set_freq(50)
 
     def set_freq(self, freq):
         """Sets the PWM frequency"""
