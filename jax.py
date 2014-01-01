@@ -31,7 +31,7 @@ def main():
 
     # start the stomp client
     stomp_client = StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
-
+    stomp_client.set_controller(controller)
     stomp_client.start_listener(remote_receive_queue)
 
     stomp_client.send_signon(remote_send_queue)

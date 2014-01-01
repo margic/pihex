@@ -1,18 +1,28 @@
 import util
 import stomp
+from sequencer import Controller
 
 __author__ = 'paul'
 
 log = util.logger
 
 
-class QueueListener(object):
+class QueueListener(Controller):
 
     def on_error(self, headers, message):
         log.debug('received an error %s' % message)
 
     def on_message(self, headers, message):
+        """
+        @type headers: dict
+        @param headers: mq headers
+        @param message: message body as string
+        """
         log.debug('received a message %s' % message)
+        if headers['type'] == 'application/json':
+            self.process_sequence(message)
+        else:
+            self.log.info('received a message with invalid content-type %s' % headers['type'])
 
 
 class StompClient:
@@ -52,3 +62,11 @@ class StompClient:
         @param queue:
         """
         self.conn.send(destination=queue, body='{"signon":true}')
+
+    def set_controller(self, controller):
+        """
+        Sets the controller that will processing incoming messages
+        @type controller: Controller
+        @param controller:
+        """
+        self.controller = controller
