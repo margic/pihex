@@ -7,7 +7,14 @@ __author__ = 'paul'
 log = util.logger
 
 
-class QueueListener(Controller):
+class QueueListener():
+
+    def __init__(self, controller):
+        """
+        @type controller: Controller
+        @param controller:
+        """
+        self.controller = controller
 
     def on_error(self, headers, message):
         log.debug('received an error %s' % message)
@@ -20,7 +27,7 @@ class QueueListener(Controller):
         """
         log.debug('received a message %s' % message)
         if headers['type'] == 'application/json':
-            self.process_sequence(message)
+            self.controller.process_sequence(message)
         else:
             self.log.info('received a message with invalid content-type %s' % headers['type'])
 
