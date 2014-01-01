@@ -49,11 +49,5 @@ def main():
             pwm.set_servo_pulse(0, 0, value)
             pwm.set_servo_pulse(1, 0, value)
 
-
-
-
-
-
-
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
+from threading import Thread
 import time
 import util
 import json
-from multiprocessing import Pool
 
 __author__ = 'Paul'
 
@@ -24,7 +24,6 @@ class Controller():
             starts the controller and prepares it for receiving sequences
         """
         self.log.info('Initializing the controller')
-        pool = Pool(processes=5)
     
     def _load_servo_config(self):
         """
@@ -58,7 +57,10 @@ class Controller():
             self.log.debug('processing move %s' % moves)
             for move in moves:
                 servo_instruction = self.process_move(move)
-                move_servo(servo_instruction)
+                move_servo_thread = ServoThread(servo_instruction)
+                move_servo_thread.setDaemon(False)
+                move_servo_thread.setName('Servo %d' % servo_instruction['channel'])
+                move_servo_thread.start()
 
     def process_move(self, move):
         """
@@ -150,24 +152,43 @@ class Controller():
         """
         return float(self.servo_calibration['pulsePerDegree'])
 
+    def update_current_pulse(self, result):
+        self.log.debug(result)
 
-def move_servo(servo_instruction):
-    sleep_time = 50.0
 
-    channel = servo_instruction['channel']
-    duration = servo_instruction['duration']
-    current_pulse = servo_instruction['current_pulse']
-    new_pulse = servo_instruction['new_pulse']
-    steps = duration / sleep_time
-    # create a range object
-    dif = (new_pulse - current_pulse) * 100
-    step_float = dif / steps
-    step = int(round(step_float))
+class ServoThread(Thread):
 
-    if step != 0:
-        #building a range that needs int values multiply by 100 to increase resolution for servo movement
-        for x in range(current_pulse * 100, new_pulse * 100, step):
-            step_pulse = x / 100
-            print 'servo channel %s pulse %d' % (channel, step_pulse)
-            time.sleep(sleep_time/1000)
-        print 'servo channel %s pulse %d' % (channel, new_pulse)
+    def __init__(self, servo_instruction):
+        Thread.__init__(self)
+        self.servo_instruction = servo_instruction
+        self.log = util.logger
+
+    def run(self):
+        self.log.debug('starting servo thread')
+        self.move_servo(self.servo_instruction)
+
+    def move_servo(self, servo_instruction):
+        """
+        @todo add code to ensure values do not exceed servo max and min
+        @param servo_instruction:
+        @return:
+        """
+        sleep_time = 50.0
+
+        channel = servo_instruction['channel']
+        duration = servo_instruction['duration']
+        current_pulse = servo_instruction['current_pulse']
+        new_pulse = servo_instruction['new_pulse']
+        steps = duration / sleep_time
+        # create a range object
+        dif = (new_pulse - current_pulse) * 100
+        step_float = dif / steps
+        step = int(round(step_float))
+
+        if step != 0:
+            #building a range that needs int values multiply by 100 to increase resolution for servo movement
+            for x in range(current_pulse * 100, new_pulse * 100, step):
+                step_pulse = x / 100
+                self.log.debug('servo channel %s pulse %d' % (channel, step_pulse))
+                time.sleep(sleep_time/1000)
+            self.log.debug('servo channel %s pulse %d' % (channel, new_pulse))

@@ -46,8 +46,10 @@ class StompClient:
         self.port = port
         self.username = username
         self.password = password
-        self.conn = stomp.Connection
         self.controller = None
+        self.conn = stomp.Connection([(self.host, self.port)])
+        self.conn.start()
+        self.conn.connect(self.username, self.password)
 
     def start_listener(self, queue):
         """
@@ -55,13 +57,8 @@ class StompClient:
         @param self:
         @param queue:
         """
-        conn = stomp.Connection([(self.host, self.port)])
-        conn.set_listener('', QueueListener())
-        conn.start()
-        conn.connect(self.username, self.password)
-
-        conn.subscribe(destination=queue, id=1, ack='auto')
-        self.conn = conn
+        self.conn.set_listener('', QueueListener(self.controller))
+        self.conn.subscribe(destination=queue, id=1, ack='auto')
 
     def send_signon(self, queue):
         """
@@ -77,3 +74,7 @@ class StompClient:
         @param controller:
         """
         self.controller = controller
+
+    def send_message(self, queue, content_type, body):
+        headers = {'type': content_type}
+        self.conn.send(destination=queue, headers=headers, body=body)
