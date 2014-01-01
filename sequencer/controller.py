@@ -11,13 +11,13 @@ __author__ = 'Paul'
 
 class Controller():
     def __init__(self):
-        self.servomap = None
-        self.servcalibration = None
+        self.servo_map = None
+        self.servo_calibration = None
         self.log = util.logger
         self._load_servo_config()
-        self.previous_position = list()
+        self.current_pulse = list()
         for x in range(0, 18, 1):
-            self.previous_position.append(0)
+            self.current_pulse.append(self.get_center_by_channel(x))
 
     def start(self):
         """
@@ -34,13 +34,13 @@ class Controller():
         """
         self.log.debug('Loading servo map data')
         json_data = open('servomap.json')
-        self.servomap = json.load(json_data)
+        self.servo_map = json.load(json_data)
         json_data.close()
         self.log.info('Loaded servomap.json')
 
         self.log.debug('Loading servo calibration data')
         json_data = open('servocalibration.json')
-        self.servocalibration = json.load(json_data)
+        self.servo_calibration = json.load(json_data)
         json_data.close()
         self.log.info('Loaded servocalibration.json')
 
@@ -57,34 +57,117 @@ class Controller():
         for moves in moveseq:
             self.log.debug('processing move %s' % moves)
             for move in moves:
-                self.process_move(move)
+                servo_instruction = self.process_move(move)
+                move_servo(servo_instruction)
 
     def process_move(self, move):
+        """
+        Processes the incoming move from the sequence and creates a servo instruction set to send
+        to the process that makes the servo move. Resolves name and angle to channel and pulse settings
+        @param move: incoming dict containing the move from the sequence has servo name and angle
+        @return: the servo instruction dict
+        @type move: dict
+        @rtype: dict
+        """
         self.log.debug('processing step %s' % move)
-        # start a process from the pool to process each step in this move in the sequence
         # resolve channel
-        servo = move['servo']
-        legnum = move['leg']
-        map = self.servomap['servoMap']
-        leg = map[legnum]
-        channel = leg[servo]
+        channel = self.get_channel_from_move(move)
 
-        calibmap = self.servocalibration['servoCalibration']
-        pulsedeg = float(self.servocalibration['pulsePerDegree'])
+        # get the servo calibration details for channel
+        pulsedeg = self.get_pulse_per_degree()
+        calib = self.get_calib_by_channel(channel)
+
+        # calculate the end position
+        current_pulse = self.get_current_pulse_by_channel(channel)
+        center = self.get_center_by_channel(channel)
+        new_pulse = int(center + (move['angle'] * pulsedeg))
+
+        #prepare the move details in a dict
+        servo_instruction = dict()
+        servo_instruction['channel'] = channel
+        servo_instruction['duration'] = move['duration']
+        servo_instruction['current_pulse'] = current_pulse
+        servo_instruction['new_pulse'] = new_pulse
+        return servo_instruction
+
+    def get_channel_from_move(self, move):
+        """
+        returns the channel name specified in a move from the sequence of moves
+        supplied
+        @type move: dict
+        @rtype: int
+        @param move: incoming move info from sequence
+        @return: channel number for corresponding servo
+        """
+        servo_name = move['servo']
+        leg_number = move['leg']
+        servo_map = self.servo_map['servoMap']
+        leg = servo_map[leg_number]
+        channel = leg[servo_name]
+        return channel
+
+    def get_current_pulse_by_channel(self, channel):
+        """
+        returns the current position of a servo channel in pulse length by channel
+        @rtype: int
+        @param channel: channel to look up current position
+        @return: pulse length of current position
+        """
+        return self.current_pulse[channel]
+
+    def get_calib_by_channel(self, channel):
+        """
+        returns the calibration dict for the specified servo channel
+        includes the max, min and center calibration for servo
+        @type channel: int
+        @rtype: dict
+        @param channel: channel number of servo
+        @return: calibration dict for servo channel
+        """
+        calibmap = self.servo_calibration['servoCalibration']
         calib = calibmap[channel]
-        # add the previous position to the calibration dict
-        calib['prevposdeg'] = self.previous_position[channel]
-        # got all the move params start moving servo in a process
-        move_servo(prev_pos, move['position'], move['speed'], channel)
+        return calib
+
+    def get_center_by_channel(self, channel):
+        """
+        returns the center pulse length for a servo channel
+        @param channel: the servo channel
+        @type channel: int
+        @rtype: int
+        @return: the center pulse length for this channel
+        """
+        calib = self.get_calib_by_channel(channel)
+        return calib['center']
+
+    def get_pulse_per_degree(self):
+        """
+        returns the num pulse length that represents a single degree
+        zero degrees represents servo center or pulse of 1.5ms pwm control translates that
+        to approx 307 pulse end time. To move servo from center 0 degree to +1 degree add
+        pulse per degree to center 307
+        @return: pulse per degree
+        @rtype: float
+        """
+        return float(self.servo_calibration['pulsePerDegree'])
 
 
-def move_servo(prev_pos, new_pos, speed, channel):
-    sleeptime = 50
-    delta = abs(prev_pos - new_pos)
-    step = delta / float(speed) / float(sleeptime)
+def move_servo(servo_instruction):
+    sleep_time = 50.0
 
-    position = step
+    channel = servo_instruction['channel']
+    duration = servo_instruction['duration']
+    current_pulse = servo_instruction['current_pulse']
+    new_pulse = servo_instruction['new_pulse']
+    steps = duration / sleep_time
+    # create a range object
+    dif = (new_pulse - current_pulse) * 100
+    step_float = dif / steps
+    step = int(round(step_float))
 
-    for x in range(0, speed, sleeptime):
-        print('position %d' % position)
-        time.sleep(50 / float(1000))
+    if step != 0:
+        #building a range that needs int values multiply by 100 to increase resolution for servo movement
+        for x in range(current_pulse * 100, new_pulse * 100, step):
+            step_pulse = x / 100
+            print 'servo channel %s pulse %d' % (channel, step_pulse)
+            time.sleep(sleep_time/1000)
+        print 'servo channel %s pulse %d' % (channel, new_pulse)

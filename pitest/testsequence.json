@@ -4,42 +4,42 @@
       {
         "leg": 1,
         "servo": "coxa",
-        "position": 0,
-        "speed": 1000
+        "angle": 0,
+        "duration": 1000
       },
       {
         "leg": 1,
         "servo": "femur",
-        "position": 0,
-        "speed": 1000
+        "angle": 0,
+        "duration": 1000
       }
     ],
     [
       {
         "leg": 1,
         "servo": "coxa",
-        "position": -10,
-        "speed": 1000
+        "angle": -10,
+        "duration": 1000
       },
       {
         "leg": 1,
         "servo": "femur",
-        "position": 10,
-        "speed": 1000
+        "angle": 10,
+        "duration": 1000
       }
     ],
     [
       {
         "leg": 1,
         "servo": "coxa",
-        "position": 10,
-        "speed": 1000
+        "angle": 10,
+        "duration": 1000
       },
       {
         "leg": 1,
         "servo": "femur",
-        "position": -10,
-        "speed": 1000
+        "angle": -10,
+        "duration": 1000
       }
     ]
   ]
