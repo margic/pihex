@@ -1,5 +1,6 @@
 from threading import Thread
 import time
+from sequencer.pwm import Pwm
 import util
 import json
 
@@ -16,6 +17,7 @@ class Controller():
         self.log = util.logger
         self._load_servo_config()
         self.current_pulse = list()
+        self.pwm = Pwm()
         for x in range(0, 18, 1):
             self.current_pulse.append(self.get_center_by_channel(x))
 
@@ -57,7 +59,7 @@ class Controller():
             self.log.debug('processing move %s' % moves)
             for move in moves:
                 servo_instruction = self.process_move(move)
-                move_servo_thread = ServoThread(servo_instruction)
+                move_servo_thread = ServoThread(servo_instruction, self.pwm)
                 move_servo_thread.setDaemon(False)
                 move_servo_thread.setName('Servo %d' % servo_instruction['channel'])
                 move_servo_thread.start()
@@ -90,6 +92,7 @@ class Controller():
         servo_instruction['duration'] = move['duration']
         servo_instruction['current_pulse'] = current_pulse
         servo_instruction['new_pulse'] = new_pulse
+        servo_instruction['update_current_pulse_method'] = self.update_current_pulse
         return servo_instruction
 
     def get_channel_from_move(self, move):
@@ -152,16 +155,25 @@ class Controller():
         """
         return float(self.servo_calibration['pulsePerDegree'])
 
-    def update_current_pulse(self, result):
-        self.log.debug(result)
+    def update_current_pulse(self, new_pulse):
+        """
+        @type updated_value: tuple
+        @param updated_value:
+        @return:
+        """
+        self.log.debug(new_pulse)
+        channel = new_pulse[0]
+        value = new_pulse[1]
+        self.current_pulse[channel] = value
 
 
 class ServoThread(Thread):
 
-    def __init__(self, servo_instruction):
+    def __init__(self, servo_instruction, pwm):
         Thread.__init__(self)
         self.servo_instruction = servo_instruction
         self.log = util.logger
+        self.pwm = pwm
 
     def run(self):
         self.log.debug('starting servo thread')
@@ -190,5 +202,10 @@ class ServoThread(Thread):
             for x in range(current_pulse * 100, new_pulse * 100, step):
                 step_pulse = x / 100
                 self.log.debug('servo channel %s pulse %d' % (channel, step_pulse))
+                self.pwm.set_servo_pulse(channel, 0, step_pulse)
                 time.sleep(sleep_time/1000)
             self.log.debug('servo channel %s pulse %d' % (channel, new_pulse))
+            self.pwm.set_servo_pulse(channel, 0, new_pulse)
+
+        update_tuple = channel, new_pulse
+        servo_instruction['update_current_pulse_method'](update_tuple)
