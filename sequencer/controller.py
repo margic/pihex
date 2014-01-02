@@ -3,6 +3,7 @@ import time
 from sequencer.pwm import Pwm
 import util
 import json
+from Queue import Queue
 
 __author__ = 'Paul'
 
@@ -17,7 +18,7 @@ class Controller():
         self.log = util.logger
         self._load_servo_config()
         self.current_pulse = list()
-        self.pwm = Pwm()
+        self.pwm_queue = Queue()
         for x in range(0, 18, 1):
             self.current_pulse.append(self.get_center_by_channel(x))
 
@@ -26,6 +27,11 @@ class Controller():
             starts the controller and prepares it for receiving sequences
         """
         self.log.info('Initializing the controller')
+        self.log.info('Starting the pwm queue thread')
+        pwm_thread = PwmThread(self.pwm_queue)
+        pwm_thread.setName('Pwm Dequeue Thread')
+        pwm_thread.setDaemon(True)
+        pwm_thread.start
     
     def _load_servo_config(self):
         """
@@ -59,7 +65,7 @@ class Controller():
             self.log.debug('processing move %s' % moves)
             for move in moves:
                 servo_instruction = self.process_move(move)
-                move_servo_thread = ServoThread(servo_instruction, self.pwm)
+                move_servo_thread = ServoThread(servo_instruction, self.pwm_queue)
                 move_servo_thread.setDaemon(False)
                 move_servo_thread.setName('Servo %d' % servo_instruction['channel'])
                 move_servo_thread.start()
@@ -92,7 +98,6 @@ class Controller():
         servo_instruction['duration'] = move['duration']
         servo_instruction['current_pulse'] = current_pulse
         servo_instruction['new_pulse'] = new_pulse
-        servo_instruction['update_current_pulse_method'] = self.update_current_pulse
         return servo_instruction
 
     def get_channel_from_move(self, move):
@@ -167,13 +172,37 @@ class Controller():
         self.current_pulse[channel] = value
 
 
+class PwmThread(Thread):
+    def __init__(self, pwm_queue):
+        """
+        @type pwm_queue: Queue
+        @param pwm_queue:
+        @return:
+        """
+        Thread.__init__(self)
+        self.pwm_queue = pwm_queue
+        self.pwm = Pwm()
+
+    def run(self):
+        while True:
+            pwm_item = self.pwm_queue.get(block=True)
+            self.pwm.set_servo_pulse(pwm_item[0], pwm_item[1], pwm_item[2])
+
+
 class ServoThread(Thread):
 
-    def __init__(self, servo_instruction, pwm):
+    def __init__(self, servo_instruction, pwm_queue):
+        """
+        @type servo_instruction: dict
+        @type pwm_queue: Queue
+        @param servo_instruction:
+        @param pwm_queue:
+        @return:
+        """
         Thread.__init__(self)
         self.servo_instruction = servo_instruction
         self.log = util.logger
-        self.pwm = pwm
+        self.pwm_queue = pwm_queue
 
     def run(self):
         self.log.debug('starting servo thread')
@@ -202,10 +231,9 @@ class ServoThread(Thread):
             for x in range(current_pulse * 100, new_pulse * 100, step):
                 step_pulse = x / 100
                 self.log.debug('servo channel %s pulse %d' % (channel, step_pulse))
-                self.pwm.set_servo_pulse(channel, 0, step_pulse)
+                pwm_item = channel, 0, step_pulse
+                self.pwm_queue.put(pwm_item)
                 time.sleep(sleep_time/1000)
             self.log.debug('servo channel %s pulse %d' % (channel, new_pulse))
-            self.pwm.set_servo_pulse(channel, 0, new_pulse)
-
-        update_tuple = channel, new_pulse
-        servo_instruction['update_current_pulse_method'](update_tuple)
+            pwm_item = channel, 0, new_pulse
+            self.pwm_queue.put(pwm_item)

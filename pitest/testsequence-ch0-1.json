@@ -1,0 +1,46 @@
+{
+  "sequence": [
+    [
+      {
+        "leg": 0,
+        "servo": "coxa",
+        "angle": 45,
+        "duration": 5000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": -45,
+        "duration": 5000
+      }
+    ],
+    [
+      {
+        "leg": 0,
+        "servo": "coxa",
+        "angle": -10,
+        "duration": 5000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": 10,
+        "duration": 5000
+      }
+    ],
+    [
+      {
+        "leg": 0,
+        "servo": "coxa",
+        "angle": 10,
+        "duration": 5000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": -10,
+        "duration": 5000
+      }
+    ]
+  ]
+}
