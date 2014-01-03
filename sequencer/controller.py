@@ -74,6 +74,9 @@ class Controller():
                 move_servo_thread.setName('Servo %d' % servo_instruction['channel'])
                 move_servo_thread.start()
 
+                move_servo_thread.join()
+            # wait for all threads to finish before doing next loop
+
     def process_move(self, move):
         """
         Processes the incoming move from the sequence and creates a servo instruction set to send
