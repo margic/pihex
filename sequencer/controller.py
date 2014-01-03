@@ -1,6 +1,6 @@
 from threading import Thread
 import time
-from sequencer.pwm import Pwm
+from sequencer.mock_pwm import MockPwm
 import util
 import json
 from Queue import Queue
@@ -19,8 +19,12 @@ class Controller():
         self._load_servo_config()
         self.current_pulse = list()
         self.pwm_queue = Queue()
+        self.pwm_sender = MockPwm()
         for x in range(0, 18, 1):
             self.current_pulse.append(self.get_center_by_channel(x))
+
+    def set_pwm_sender(self, sender):
+        self.pwm_sender = sender
 
     def start(self):
         """
@@ -28,10 +32,10 @@ class Controller():
         """
         self.log.info('Initializing the controller')
         self.log.info('Starting the pwm queue thread')
-        pwm_thread = PwmThread(self.pwm_queue)
+        pwm_thread = PwmThread(self.pwm_queue, self.pwm_sender)
         pwm_thread.setName('Pwm Dequeue Thread')
-        pwm_thread.setDaemon(True)
-        pwm_thread.start
+        pwm_thread.setDaemon(False)
+        pwm_thread.start()
     
     def _load_servo_config(self):
         """
@@ -173,20 +177,24 @@ class Controller():
 
 
 class PwmThread(Thread):
-    def __init__(self, pwm_queue):
+    def __init__(self, pwm_queue, pwm_sender):
         """
         @type pwm_queue: Queue
+        @type pwm_sender: PwmSender
         @param pwm_queue:
+        @param pwm_sender: the sender that sends the pulse items
         @return:
         """
         Thread.__init__(self)
         self.pwm_queue = pwm_queue
-        self.pwm = Pwm()
+        self.pwm = pwm_sender
+        self.log = util.logger
 
     def run(self):
         while True:
             pwm_item = self.pwm_queue.get(block=True)
-            self.pwm.set_servo_pulse(pwm_item[0], pwm_item[1], pwm_item[2])
+            self.log.debug('Dequeue pwm item %s' % (pwm_item,))
+            self.pwm.set_servo_pulse(pwm_item)
 
 
 class ServoThread(Thread):

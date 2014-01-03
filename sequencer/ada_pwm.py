@@ -1,4 +1,5 @@
 from sequencer import i2c
+from sequencer.pwm_sender import PwmSender
 
 __author__ = 'paul'
 
@@ -9,7 +10,7 @@ import math
 import util
 
 
-class Pwm:
+class AdaPwm(PwmSender):
     """Class for manipulating the servo control board"""
     # there will be two boards in total
     b1 = None  # board 1
@@ -30,9 +31,9 @@ class Pwm:
     __ALLLED_OFF_L = 0xFC
     __ALLLED_OFF_H = 0xFD
 
-    # Min Max servo values
-    __SERVO_MIN = 200
-    __SERVO_MAX = 500
+    # Min Max servo values for safety servo calibration should keep values within these
+    __SERVO_MIN = 100
+    __SERVO_MAX = 600
 
     def __init__(self):
         self.b1 = i2c.I2cBus(0x40)
@@ -62,8 +63,16 @@ class Pwm:
         time.sleep(0.005)
         self.b1.write_byte(self.__MODE1, oldmode | 0x80)
 
-    def set_servo_pulse(self, channel, pulse_start, pulse_end):
-        """Sets a single servo PWM channel where pulseStart is typical 0 and pulseEnd is the end of the pulse"""
+    def set_servo_pulse(self, pulse_item):
+        """
+        Sets a single servo PWM channel where pulseStart is typical 0 and pulseEnd is the end of the pulse
+        @param pulse_item: the pulse details
+        @type pulse_item: tuple
+        """
+        channel = pulse_item[0]
+        pulse_start = pulse_item[1]
+        pulse_end = pulse_item[2]
+
         pulse_length = pulse_end - pulse_start
         if (pulse_length > self.__SERVO_MIN) and (pulse_length < self.__SERVO_MAX):
             self.b1.write_byte(self.__LED0_ON_L + 4 * channel, pulse_start & 0xFF)

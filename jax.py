@@ -1,7 +1,7 @@
 import ConfigParser
 from client.stompclient import StompClient
+from sequencer.ada_pwm import AdaPwm
 from sequencer.controller import Controller
-from sequencer.pwm import Pwm
 import util
 
 __author__ = 'Paul'
@@ -27,6 +27,7 @@ def main():
 
     # start the controller
     controller = Controller()
+    controller.set_pwm_sender(AdaPwm())
     controller.start()
 
     # start the stomp client
@@ -36,18 +37,11 @@ def main():
 
     stomp_client.send_signon(remote_send_queue)
 
-    pwm = None
-
     loop = True
     while loop:
         value = int(raw_input('Enter pulse length: '))
         if value == -1:
             loop = False
-        else:
-            if pwm is None:
-                pwm = Pwm()
-            pwm.set_servo_pulse(0, 0, value)
-            pwm.set_servo_pulse(1, 0, value)
 
 if __name__ == "__main__":
     main()
