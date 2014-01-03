@@ -5,7 +5,13 @@
         "leg": 0,
         "servo": "coxa",
         "angle": -45,
-        "duration": 1000
+        "duration": 2000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": -45,
+        "duration": 2000
       }
     ],
     [
@@ -13,7 +19,41 @@
         "leg": 0,
         "servo": "coxa",
         "angle": 45,
-        "duration": 1000
+        "duration": 2000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": 45,
+        "duration": 2000
+      }
+    ],
+    [
+      {
+        "leg": 0,
+        "servo": "coxa",
+        "angle": -45,
+        "duration": 2000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": -45,
+        "duration": 2000
+      }
+    ],
+     [
+      {
+        "leg": 0,
+        "servo": "coxa",
+        "angle": 45,
+        "duration": 2000
+      },
+      {
+        "leg": 0,
+        "servo": "femur",
+        "angle": 45,
+        "duration": 2000
       }
     ]
  ]

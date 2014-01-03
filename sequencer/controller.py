@@ -72,7 +72,7 @@ class Controller():
             for move in moves:
                 thread_count += 1
                 servo_instruction = self.process_move(move)
-                move_servo_thread = ServoThread(servo_instruction, self.pwm_queue, condition, thread_count)
+                move_servo_thread = ServoThread(servo_instruction, self.pwm_queue, condition, thread_count, self.update_current_pulse)
                 move_servo_thread.setDaemon(False)
                 move_servo_thread.setName('Servo %d' % servo_instruction['channel'])
                 move_servo_thread.start()
@@ -207,7 +207,7 @@ class PwmThread(Thread):
 
 class ServoThread(Thread):
 
-    def __init__(self, servo_instruction, pwm_queue, condition, thread_count):
+    def __init__(self, servo_instruction, pwm_queue, condition, thread_count, update_current_pulse):
         """
         @type servo_instruction: dict
         @type pwm_queue: Queue
@@ -221,6 +221,7 @@ class ServoThread(Thread):
         self.pwm_queue = pwm_queue
         self.condition = condition
         self.thread_count = thread_count
+        self.update_current_pulse = update_current_pulse
 
     def run(self):
         self.log.debug('starting servo thread')
@@ -229,7 +230,6 @@ class ServoThread(Thread):
         self.thread_count -= 1
         self.condition.notify()
         self.condition.release()
-
 
     def move_servo(self, servo_instruction):
         """
@@ -260,3 +260,5 @@ class ServoThread(Thread):
             self.log.debug('servo channel %s pulse %d' % (channel, new_pulse))
             pwm_item = channel, 0, new_pulse
             self.pwm_queue.put(pwm_item)
+            update_pulse = channel, new_pulse
+            self.update_current_pulse(update_pulse)
