@@ -1,4 +1,4 @@
-from threading import Thread
+from threading import Thread, Condition
 import time
 from sequencer.mock_pwm import MockPwm
 import util
@@ -67,15 +67,20 @@ class Controller():
 
         for moves in moveseq:
             self.log.debug('processing move %s' % moves)
+            condition = Condition()
+            thread_count = 0
             for move in moves:
+                thread_count += 1
                 servo_instruction = self.process_move(move)
-                move_servo_thread = ServoThread(servo_instruction, self.pwm_queue)
+                move_servo_thread = ServoThread(servo_instruction, self.pwm_queue, condition, thread_count)
                 move_servo_thread.setDaemon(False)
                 move_servo_thread.setName('Servo %d' % servo_instruction['channel'])
                 move_servo_thread.start()
-
-                move_servo_thread.join()
+            condition.acquire()
+            if thread_count > 0:
+                condition.wait()
             # wait for all threads to finish before doing next loop
+            condition.release()
 
     def process_move(self, move):
         """
@@ -202,7 +207,7 @@ class PwmThread(Thread):
 
 class ServoThread(Thread):
 
-    def __init__(self, servo_instruction, pwm_queue):
+    def __init__(self, servo_instruction, pwm_queue, condition, thread_count):
         """
         @type servo_instruction: dict
         @type pwm_queue: Queue
@@ -214,10 +219,17 @@ class ServoThread(Thread):
         self.servo_instruction = servo_instruction
         self.log = util.logger
         self.pwm_queue = pwm_queue
+        self.condition = condition
+        self.thread_count = thread_count
 
     def run(self):
         self.log.debug('starting servo thread')
         self.move_servo(self.servo_instruction)
+        self.condition.acquire()
+        self.thread_count -= 1
+        self.condition.notify()
+        self.condition.release()
+
 
     def move_servo(self, servo_instruction):
         """
