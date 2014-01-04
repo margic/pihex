@@ -1,11 +1,13 @@
+from logging import FileHandler
+
 __author__ = 'Paul'
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
 
 logger = logging.getLogger(__name__)
-stomplog = logging.getLogger('stomp.py')
-hdl = logging.StreamHandler()
+#hdl = logging.StreamHandler()
+file_handler = FileHandler('/var/log/pihex/pihex.log')
 logger.setLevel(logging.DEBUG)
-stomplog.setLevel(logging.INFO)
-logger.addHandler(hdl)
-stomplog.addHandler(hdl)
+#logger.addHandler(hdl)
+logger.addHandler(file_handler)

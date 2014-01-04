@@ -237,7 +237,7 @@ class ServoThread(Thread):
         @param servo_instruction:
         @return:
         """
-        sleep_time = 20.0
+        sleep_time = 50.0
 
         channel = servo_instruction['channel']
         duration = servo_instruction['duration']
