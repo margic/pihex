@@ -1,6 +1,5 @@
 import util
 import stomp
-from sequencer import Controller
 
 __author__ = 'paul'
 
@@ -11,7 +10,7 @@ class QueueListener():
 
     def __init__(self, controller):
         """
-        @type controller: Controller
+        @type controller: sequencer.controller.Controller
         @param controller:
         """
         self.controller = controller
@@ -70,7 +69,7 @@ class StompClient:
     def set_controller(self, controller):
         """
         Sets the controller that will processing incoming messages
-        @type controller: Controller
+        @type controller: sequencer.controller.Controller
         @param controller:
         """
         self.controller = controller

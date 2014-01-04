@@ -1,6 +1,7 @@
 from threading import Thread, Condition
 import time
 from sequencer.mock_pwm import MockPwm
+from client.stompclient import StompClient
 import util
 import json
 from Queue import Queue
@@ -12,7 +13,13 @@ __author__ = 'Paul'
 
 
 class Controller():
-    def __init__(self):
+    def __init__(self, queue_config):
+        """
+        @type queue_config: dict
+        @param queue_config: the message queue configuration
+        @return:
+        """
+        self.queue_config = queue_config
         self.servo_map = None
         self.servo_calibration = None
         self.log = util.logger
@@ -20,6 +27,7 @@ class Controller():
         self.current_pulse = list()
         self.pwm_queue = Queue()
         self.pwm_sender = MockPwm()
+        # set up default servo centers
         for x in range(0, 18, 1):
             self.current_pulse.append(self.get_center_by_channel(x))
 
@@ -31,12 +39,28 @@ class Controller():
             starts the controller and prepares it for receiving sequences
         """
         self.log.info('Initializing the controller')
+        #controller.set_pwm_sender(AdaPwm())
+
         self.log.info('Starting the pwm queue thread')
         pwm_thread = PwmThread(self.pwm_queue, self.pwm_sender)
         pwm_thread.setName('Pwm Dequeue Thread')
         pwm_thread.setDaemon(False)
         pwm_thread.start()
-    
+
+        # start the stomp client
+        remote_queue_host = self.queue_config['remote_queue_host']
+        remote_queue_port = self.queue_config['remote_queue_port']
+        remote_queue_username = self.queue_config['remote_queue_username']
+        remote_queue_password = self.queue_config['remote_queue_password']
+        remote_receive_queue = self.queue_config['remote_receive_queue']
+        remote_send_queue = self.queue_config['remote_send_queue']
+
+        stomp_client = StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
+        stomp_client.set_controller(self)
+        stomp_client.start_listener(remote_receive_queue)
+
+        stomp_client.send_signon(remote_send_queue)
+
     def _load_servo_config(self):
         """
             load the servo configuration files
