@@ -1,9 +1,8 @@
 import util
 import stomp
 
-__author__ = 'paul'
 
-log = util.logger
+__author__ = 'paul'
 
 
 class QueueListener():
@@ -13,10 +12,11 @@ class QueueListener():
         @type controller: sequencer.controller.Controller
         @param controller:
         """
+        self.log = util.logger
         self.controller = controller
 
     def on_error(self, headers, message):
-        log.debug('received an error %s' % message)
+        self.log.debug('received an error %s' % message)
 
     def on_message(self, headers, message):
         """
@@ -24,7 +24,7 @@ class QueueListener():
         @param headers: mq headers
         @param message: message body as string
         """
-        log.debug('received a message %s' % message)
+        self.log.debug('received a message %s' % message)
         if headers['type'] == 'application/json':
             self.controller.process_sequence(message)
         else:
@@ -33,22 +33,27 @@ class QueueListener():
 
 class StompClient:
 
-    def __init__(self, host, port, username, password):
+    def __init__(self, queue_config):
         """
         Initializes the stomp client with host params
-        @param host:
-        @param port:
-        @param username:
-        @param password:
+        @param queue_config: the config
+        @type queue_config: dict
         """
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
+        self.host = queue_config['remote_queue_host']
+        self.port = queue_config['remote_queue_port']
+        self.username = queue_config['remote_queue_username']
+        self.password = queue_config['remote_queue_password']
         self.controller = None
+        self.queue = None
         self.conn = stomp.Connection([(self.host, self.port)])
         self.conn.start()
         self.conn.connect(self.username, self.password)
+        self.log = util.logger
+
+    def stop_client(self):
+        self.log.info('Terminating the message queue connection connection')
+        self.conn.unsubscribe(destination=self.queue, id=1)
+        self.conn.disconnect()
 
     def start_listener(self, queue):
         """
@@ -56,8 +61,10 @@ class StompClient:
         @param self:
         @param queue:
         """
+        self.log.info('Starting the stomp listener')
         self.conn.set_listener('', QueueListener(self.controller))
         self.conn.subscribe(destination=queue, id=1, ack='auto')
+        self.queue = queue
 
     def send_signon(self, queue):
         """

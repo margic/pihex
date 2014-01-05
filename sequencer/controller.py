@@ -1,3 +1,4 @@
+import ConfigParser
 from threading import Thread, Condition
 import time
 from sequencer.mock_pwm import MockPwm
@@ -13,13 +14,23 @@ __author__ = 'Paul'
 
 
 class Controller():
-    def __init__(self, queue_config):
+    def __init__(self):
         """
         @type queue_config: dict
         @param queue_config: the message queue configuration
         @return:
         """
-        self.queue_config = queue_config
+        # load config properties
+        config = ConfigParser.ConfigParser()
+        config.read('config/settings.cfg')
+        self.queue_config = dict()
+        self.queue_config['remote_queue_host'] = config.get('RemoteQueue', 'host')
+        self.queue_config['remote_queue_port'] = config.getint('RemoteQueue', 'port')
+        self.queue_config['remote_queue_username'] = config.get('RemoteQueue', 'username')
+        self.queue_config['remote_queue_password'] = config.get('RemoteQueue', 'password')
+        self.remote_receive_queue = config.get('RemoteQueue', 'receive_queue')
+        self.remote_send_queue = config.get('RemoteQueue', 'send_queue')
+        self.started = False
         self.servo_map = None
         self.servo_calibration = None
         self.log = util.logger
@@ -27,6 +38,8 @@ class Controller():
         self.current_pulse = list()
         self.pwm_queue = Queue()
         self.pwm_sender = MockPwm()
+        self.pwm_thread = None
+        self.stomp = None
         # set up default servo centers
         for x in range(0, 18, 1):
             self.current_pulse.append(self.get_center_by_channel(x))
@@ -34,32 +47,36 @@ class Controller():
     def set_pwm_sender(self, sender):
         self.pwm_sender = sender
 
+    def stop(self):
+        self.started = False
+        self.stomp.stop_client()
+        self.pwm_thread.stop()
+
     def start(self):
         """
             starts the controller and prepares it for receiving sequences
         """
         self.log.info('Initializing the controller')
         #controller.set_pwm_sender(AdaPwm())
-
+        self.started = True
         self.log.info('Starting the pwm queue thread')
-        pwm_thread = PwmThread(self.pwm_queue, self.pwm_sender)
-        pwm_thread.setName('Pwm Dequeue Thread')
-        pwm_thread.setDaemon(False)
-        pwm_thread.start()
+        self.pwm_thread = PwmThread(self.pwm_queue, self.pwm_sender)
+        self.pwm_thread.setName('Pwm Dequeue Thread')
+        self.pwm_thread.setDaemon(False)
+        self.pwm_thread.start()
 
         # start the stomp client
-        remote_queue_host = self.queue_config['remote_queue_host']
-        remote_queue_port = self.queue_config['remote_queue_port']
-        remote_queue_username = self.queue_config['remote_queue_username']
-        remote_queue_password = self.queue_config['remote_queue_password']
-        remote_receive_queue = self.queue_config['remote_receive_queue']
-        remote_send_queue = self.queue_config['remote_send_queue']
+        remote_receive_queue = self.remote_receive_queue
+        remote_send_queue = self.remote_send_queue
 
-        stomp_client = StompClient(remote_queue_host, remote_queue_port, remote_queue_username, remote_queue_password)
+        stomp_client = StompClient(self.queue_config)
         stomp_client.set_controller(self)
         stomp_client.start_listener(remote_receive_queue)
 
         stomp_client.send_signon(remote_send_queue)
+        self.stomp = stomp_client
+        while bool(self.started):
+            time.sleep(2)
 
     def _load_servo_config(self):
         """
@@ -221,12 +238,21 @@ class PwmThread(Thread):
         self.pwm_queue = pwm_queue
         self.pwm = pwm_sender
         self.log = util.logger
+        self.started = False
 
     def run(self):
-        while True:
+        self.started = True
+        while self.started:
             pwm_item = self.pwm_queue.get(block=True)
             self.log.debug('Dequeue pwm item %s' % (pwm_item,))
-            self.pwm.set_servo_pulse(pwm_item)
+            if repr(pwm_item) == 'Terminate':
+                self.log.info("Terminate message on pwm queue")
+            else:
+                self.pwm.set_servo_pulse(pwm_item)
+
+    def stop(self):
+        self.started = False
+        self.pwm_queue.put('Terminate')
 
 
 class ServoThread(Thread):

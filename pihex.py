@@ -1,5 +1,6 @@
 import ConfigParser
 import os
+import pydevd
 import time
 from sequencer.controller import Controller
 import util
@@ -16,29 +17,25 @@ class PiHex():
         self.stderr_path = '/dev/tty'
         self.pidfile_path = os.getcwd() + '/pihex.pid'
         self.pidfile_timeout = 5
-        # load config properties
-        config = ConfigParser.ConfigParser()
-        config.read('config/settings.cfg')
-        self.queue_config = dict()
-        self.queue_config['remote_queue_host'] = config.get('RemoteQueue', 'host')
-        self.queue_config['remote_queue_port'] = config.getint('RemoteQueue', 'port')
-        self.queue_config['remote_queue_username'] = config.get('RemoteQueue', 'username')
-        self.queue_config['remote_queue_password'] = config.get('RemoteQueue', 'password')
-        self.queue_config['remote_receive_queue'] = config.get('RemoteQueue', 'receive_queue')
-        self.queue_config['remote_send_queue'] = config.get('RemoteQueue', 'send_queue')
 
-    def terminate(self):
-        self.log.info('terminated')
-        print 'terminated'
+        # the controller instance
+        self.controller = None
+
+    def terminate(self, signal_number, stack_frame):
+        """
+        Signal call back to allow the controller to shutdown on daemon termination
+        @param signal_number:
+        @param stack_frame:
+        @return:
+        """
+        self.log.info('Terminating the robot controller %d' % signal_number)
+        self.controller.stop()
 
     def run(self):
         self.log.info('Starting the JAX robot controller')
-        while True:
-            time.sleep(10)
         # start the controller
-        controller = Controller(self.queue_config)
-        #controller.start()
-
+        self.controller = Controller()
+        self.controller.start()
 
 def main():
     pihex = PiHex()
