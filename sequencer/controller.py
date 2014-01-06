@@ -1,6 +1,7 @@
 import ConfigParser
 from threading import Thread, Condition
 import time
+from sequencer.ada_pwm import AdaPwm
 from sequencer.mock_pwm import MockPwm
 from client.stompclient import StompClient
 import util
@@ -57,7 +58,7 @@ class Controller():
             starts the controller and prepares it for receiving sequences
         """
         self.log.info('Initializing the controller')
-        #controller.set_pwm_sender(AdaPwm())
+        self.set_pwm_sender(AdaPwm())
         self.started = True
         self.log.info('Starting the pwm queue thread')
         self.pwm_thread = PwmThread(self.pwm_queue, self.pwm_sender)

@@ -2,6 +2,7 @@ import ConfigParser
 import os
 import pydevd
 import time
+import signal
 from sequencer.controller import Controller
 import util
 
@@ -37,8 +38,11 @@ class PiHex():
         self.controller = Controller()
         self.controller.start()
 
+
 def main():
     pihex = PiHex()
+    signal.signal(signal.SIGTERM, pihex.terminate)
+    signal.signal(signal.SIGINT, pihex.terminate)
     pihex.run()
 
 if __name__ == '__main__':
